@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "uid": "80e176cf-631f-45dd-a816-72b1c0d31d62",
+      "name": "VenMars Tri World Project",
+      "frontend_url": "http://localhost:5173",
+      "backend_url": "http://localhost:8000",
+      "project_folder": "C:/Files/MFD Personal/Programming/ai_projects/venmars-triworld-project",
+      "github_repo": "https://github.com/michaelfdickey/venmars-triworld-project"
+    }
+  ]
+}

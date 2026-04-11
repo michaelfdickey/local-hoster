@@ -1,0 +1,4 @@
+# Local Hoster – managed by the app; not user-editable unless you know what you're doing
+venv/
+__pycache__/
+*.pyc
