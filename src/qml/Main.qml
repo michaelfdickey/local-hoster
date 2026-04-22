@@ -67,10 +67,11 @@ ApplicationWindow {
                 anchors.rightMargin: 12
                 spacing: 8
 
-                Label { text: "Name";        color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 140 }
-                Label { text: "Frontend";     color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 180 }
-                Label { text: "Backend";      color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 180 }
-                Label { text: "Launcher";     color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 70 }
+                Label { text: "Name";        color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 220 }
+                Label { text: "Frontend";     color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 140 }
+                Label { text: "Backend";      color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 140 }
+                Label { text: "Launcher";     color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 50; Layout.rightMargin: 12 }
+                Label { text: "Status";       color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 65 }
                 Item  { Layout.fillWidth: true }
                 Label { text: "Actions";      color: "#a6adc8"; font.bold: true }
             }
@@ -99,13 +100,22 @@ ApplicationWindow {
                         anchors.rightMargin: 12
                         spacing: 8
 
-                        // Name
+                        // Name (clickable link to GitHub repo)
                         Label {
                             text: model.name
                             color: "#cdd6f4"
                             font.pixelSize: 14
+                            font.bold: true
                             elide: Text.ElideRight
-                            Layout.preferredWidth: 140
+                            Layout.preferredWidth: 220
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: model.githubRepo ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                onClicked: {
+                                    if (model.githubRepo)
+                                        Qt.openUrlExternally(model.githubRepo)
+                                }
+                            }
                         }
 
                         // Frontend URL (clickable)
@@ -114,7 +124,7 @@ ApplicationWindow {
                             color: model.frontendUrl ? "#89b4fa" : "#585b70"
                             font.pixelSize: 13
                             elide: Text.ElideRight
-                            Layout.preferredWidth: 180
+                            Layout.preferredWidth: 140
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: model.frontendUrl ? Qt.PointingHandCursor : Qt.ArrowCursor
@@ -131,7 +141,7 @@ ApplicationWindow {
                             color: model.backendUrl ? "#89b4fa" : "#585b70"
                             font.pixelSize: 13
                             elide: Text.ElideRight
-                            Layout.preferredWidth: 180
+                            Layout.preferredWidth: 140
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: model.backendUrl ? Qt.PointingHandCursor : Qt.ArrowCursor
@@ -148,7 +158,17 @@ ApplicationWindow {
                             color: model.hasLauncher ? "#a6e3a1" : "#f38ba8"
                             font.pixelSize: 16
                             horizontalAlignment: Text.AlignHCenter
-                            Layout.preferredWidth: 70
+                            Layout.preferredWidth: 50
+                            Layout.rightMargin: 12
+                        }
+
+                        // Running status
+                        Label {
+                            text: model.running ? "Running" : "Stopped"
+                            color: model.running ? "#a6e3a1" : "#f38ba8"
+                            font.pixelSize: 13
+                            font.bold: true
+                            Layout.preferredWidth: 65
                         }
 
                         Item { Layout.fillWidth: true }

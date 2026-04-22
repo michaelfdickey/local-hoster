@@ -5,15 +5,19 @@ Handles:
   - Loading / saving app configs from config.json
   - Starting / stopping / resetting apps via their launcher scripts
   - Exposing a list model to QML
-  - Detecting launcher.py (Windows) / launcher.sh (macOS/Linux)
+  - Detecting launcher.py or launcher.sh in project folders
+  - Extracting ports from frontend/backend URLs and passing them to launchers
+  - Detecting whether apps are already running by checking port usage
 """
 
 import json
 import os
 import platform
+import socket
 import subprocess
 import uuid
 from typing import Optional
+from urllib.parse import urlparse
 
 from PySide6.QtCore import (
     QObject,
@@ -24,6 +28,7 @@ from PySide6.QtCore import (
     QModelIndex,
     Qt,
     QProcess,
+    QTimer,
     QUrl,
 )
 
@@ -35,14 +40,42 @@ from PySide6.QtCore import (
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(ROOT_DIR, "config.json")
 
+# Launcher script names to look for, in priority order
+LAUNCHER_NAMES = ["launcher.sh", "launcher.py"]
 
-def _default_launcher_name() -> str:
-    """Return the expected launcher script name for the current OS."""
-    if platform.system() == "Darwin":
-        return "launcher.sh"
-    if platform.system() == "Linux":
-        return "launcher.sh"
-    return "launcher.py"
+
+def _find_launcher(project_folder: str) -> Optional[str]:
+    """Return the first launcher script found in the project folder, or None."""
+    if not project_folder or not os.path.isdir(project_folder):
+        return None
+    for name in LAUNCHER_NAMES:
+        path = os.path.join(project_folder, name)
+        if os.path.isfile(path):
+            return name
+    return None
+
+
+def _extract_port(url: str) -> Optional[int]:
+    """Extract the port number from a URL string, or None if absent."""
+    if not url:
+        return None
+    try:
+        parsed = urlparse(url)
+        if parsed.port:
+            return parsed.port
+    except Exception:
+        pass
+    return None
+
+
+def _is_port_in_use(port: int) -> bool:
+    """Check whether a TCP port is currently in use on localhost."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(0.3)
+            return s.connect_ex(("127.0.0.1", port)) == 0
+    except Exception:
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -67,21 +100,39 @@ class AppEntry:
         self.backend_url: str = backend_url
         self.project_folder: str = project_folder
         self.github_repo: str = github_repo
-        # Runtime – not persisted
+        # Runtime state (not persisted)
         self.process: Optional[QProcess] = None
         self.running: bool = False
         self.has_launcher: bool = False
+        self._launcher_name: Optional[str] = None
 
     def detect_launcher(self) -> None:
         """Check whether the project folder contains a launcher script."""
-        if not self.project_folder or not os.path.isdir(self.project_folder):
-            self.has_launcher = False
-            return
-        launcher = os.path.join(self.project_folder, _default_launcher_name())
-        self.has_launcher = os.path.isfile(launcher)
+        self._launcher_name = _find_launcher(self.project_folder)
+        self.has_launcher = self._launcher_name is not None
 
     def launcher_path(self) -> str:
-        return os.path.join(self.project_folder, _default_launcher_name())
+        if self._launcher_name:
+            return os.path.join(self.project_folder, self._launcher_name)
+        return ""
+
+    @property
+    def frontend_port(self) -> Optional[int]:
+        return _extract_port(self.frontend_url)
+
+    @property
+    def backend_port(self) -> Optional[int]:
+        return _extract_port(self.backend_url)
+
+    def check_running_by_port(self) -> bool:
+        """Return True if either the frontend or backend port is in use."""
+        fp = self.frontend_port
+        bp = self.backend_port
+        if fp and _is_port_in_use(fp):
+            return True
+        if bp and _is_port_in_use(bp):
+            return True
+        return False
 
     def to_dict(self) -> dict:
         return {
@@ -216,6 +267,11 @@ class AppManager(QObject):
         super().__init__(parent)
         self._model = AppListModel(self)
         self._load_config()
+        # Periodically check if apps are running by probing their ports
+        self._poll_timer = QTimer(self)
+        self._poll_timer.setInterval(5000)  # every 5 seconds
+        self._poll_timer.timeout.connect(self._poll_running_status)
+        self._poll_timer.start()
 
     # -- Properties ----------------------------------------------------------
 
@@ -231,6 +287,10 @@ class AppManager(QObject):
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
         entries = [AppEntry.from_dict(d) for d in data.get("apps", [])]
+        # Detect which apps are already running by checking their ports
+        for entry in entries:
+            if entry.check_running_by_port():
+                entry.running = True
         self._model.set_entries(entries)
         self.appsChanged.emit()
 
@@ -295,6 +355,13 @@ class AppManager(QObject):
         proc = QProcess(self)
         proc.setWorkingDirectory(entry.project_folder)
 
+        # Build port arguments
+        extra_args = []
+        if entry.frontend_port:
+            extra_args += ["-p", str(entry.frontend_port)]
+        if entry.backend_port:
+            extra_args += ["-b", str(entry.backend_port)]
+
         # Determine how to invoke the launcher
         if launcher.endswith(".py"):
             # Use python from a venv if available, else system python
@@ -302,10 +369,10 @@ class AppManager(QObject):
                 if platform.system() == "Windows" \
                 else os.path.join(entry.project_folder, "venv", "bin", "python")
             python = venv_python if os.path.isfile(venv_python) else "python"
-            proc.start(python, [launcher])
+            proc.start(python, [launcher] + extra_args)
         else:
             # .sh launcher
-            proc.start("bash", [launcher])
+            proc.start("bash", [launcher] + extra_args)
 
         entry.process = proc
         entry.running = True
@@ -324,8 +391,12 @@ class AppManager(QObject):
             if not entry.process.waitForFinished(5000):
                 entry.process.kill()
                 entry.process.waitForFinished(3000)
+            entry.process = None
+        else:
+            # No QProcess handle (app was running before Local Hoster started).
+            # Kill by port using lsof/kill on macOS/Linux, netstat on Windows.
+            self._kill_by_ports(entry)
         entry.running = False
-        entry.process = None
         self._model.notify_change(index)
 
     @Slot(int)
@@ -361,15 +432,12 @@ class AppManager(QObject):
 
     @Slot(str, result=bool)
     def hasLauncherScript(self, folder):
-        """Check if a folder contains the expected launcher script."""
-        if not folder or not os.path.isdir(folder):
-            return False
-        launcher = os.path.join(folder, _default_launcher_name())
-        return os.path.isfile(launcher)
+        """Check if a folder contains a launcher script."""
+        return _find_launcher(folder) is not None
 
     @Slot(result=str)
     def launcherScriptName(self):
-        return _default_launcher_name()
+        return ", ".join(LAUNCHER_NAMES)
 
     # -- Internal ------------------------------------------------------------
 
@@ -379,3 +447,53 @@ class AppManager(QObject):
             entry.running = False
             entry.process = None
             self._model.notify_change(index)
+
+    def _poll_running_status(self):
+        """Periodically check each app's ports and update running status."""
+        for i, entry in enumerate(self._model._entries):
+            # If we launched it ourselves, trust the QProcess state
+            if entry.process is not None:
+                continue
+            port_active = entry.check_running_by_port()
+            if port_active != entry.running:
+                entry.running = port_active
+                self._model.notify_change(i)
+
+    @staticmethod
+    def _kill_by_ports(entry: "AppEntry") -> None:
+        """Attempt to kill processes listening on the app's ports."""
+        ports = []
+        if entry.frontend_port:
+            ports.append(entry.frontend_port)
+        if entry.backend_port:
+            ports.append(entry.backend_port)
+        for port in ports:
+            try:
+                if platform.system() in ("Darwin", "Linux"):
+                    # Use lsof to find PIDs listening on the port
+                    result = subprocess.run(
+                        ["lsof", "-ti", f"tcp:{port}"],
+                        capture_output=True, text=True, timeout=5,
+                    )
+                    pids = result.stdout.strip().split("\n")
+                    for pid in pids:
+                        pid = pid.strip()
+                        if pid.isdigit():
+                            subprocess.run(["kill", pid], timeout=5)
+                else:
+                    # Windows: use netstat + taskkill
+                    result = subprocess.run(
+                        ["netstat", "-ano"],
+                        capture_output=True, text=True, timeout=5,
+                    )
+                    for line in result.stdout.splitlines():
+                        if f":{port}" in line and "LISTENING" in line:
+                            parts = line.split()
+                            pid = parts[-1].strip()
+                            if pid.isdigit():
+                                subprocess.run(
+                                    ["taskkill", "/F", "/PID", pid],
+                                    timeout=5,
+                                )
+            except Exception as e:
+                print(f"[warn] Failed to kill process on port {port}: {e}")

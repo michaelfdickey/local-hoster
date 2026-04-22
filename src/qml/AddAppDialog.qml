@@ -8,8 +8,8 @@ Dialog {
     title: editIndex === -1 ? "Add Application" : "Edit Application"
     modal: true
     anchors.centerIn: parent
-    width: 520
-    height: 480
+    width: 560
+    height: 560
     padding: 20
 
     // ── public API ──────────────────────────────────────────────
@@ -63,10 +63,9 @@ Dialog {
     function _checkLauncher() {
         if (folderField.text.length > 0) {
             var found = appManager.hasLauncherScript(folderField.text)
-            var scriptName = appManager.launcherScriptName()
             launcherStatus.text = found
-                ? ("✔ " + scriptName + " found")
-                : ("✘ " + scriptName + " not found")
+                ? "✔ Launcher script found"
+                : "✘ No launcher.sh or launcher.py found"
             launcherStatus.color = found ? "#a6e3a1" : "#f38ba8"
         } else {
             launcherStatus.text = ""
