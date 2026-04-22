@@ -20,6 +20,8 @@ Dialog {
     property alias projectFolder: folderField.text
     property alias githubRepo: githubField.text
 
+    signal deleteRequested(int index)
+
     function openForAdd() {
         editIndex = -1
         nameField.text = ""
@@ -157,6 +159,17 @@ Dialog {
         RowLayout {
             Layout.fillWidth: true
             Layout.topMargin: 8
+            Button {
+                text: "Delete"
+                visible: editIndex !== -1
+                onClicked: {
+                    dialog.deleteRequested(editIndex)
+                    dialog.close()
+                }
+                background: Rectangle { color: parent.hovered ? "#f38ba8" : "#45475a"; radius: 6 }
+                contentItem: Label { text: parent.text; color: "#cdd6f4"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                implicitWidth: 90; implicitHeight: 36
+            }
             Item { Layout.fillWidth: true }
             Button {
                 text: "Cancel"

@@ -301,6 +301,21 @@ class AppManager(QObject):
 
     # -- Slots called from QML -----------------------------------------------
 
+    @Slot(str, bool)
+    def sortApps(self, column: str, ascending: bool):
+        """Sort the app list by the given column name."""
+        key_map = {
+            "name": lambda e: (e.name or "").lower(),
+            "frontend": lambda e: (e.frontend_url or "").lower(),
+            "status": lambda e: (0 if e.running else 1),  # Running first when ascending
+        }
+        key_fn = key_map.get(column)
+        if key_fn is None:
+            return
+        self._model.beginResetModel()
+        self._model._entries.sort(key=key_fn, reverse=not ascending)
+        self._model.endResetModel()
+
     @Slot(str, str, str, str, str)
     def addApp(self, name, frontend_url, backend_url, project_folder, github_repo):
         """Add a new tracked application."""

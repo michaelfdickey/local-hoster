@@ -1,12 +1,36 @@
 {
   "apps": [
     {
-      "uid": "80e176cf-631f-45dd-a816-72b1c0d31d62",
-      "name": "VenMars Tri World Project",
-      "frontend_url": "http://localhost:5001",
-      "backend_url": "http://localhost:8001",
-      "project_folder": "/Users/michaelfdickey/Documents/repositories/venmars-triworld-project/",
-      "github_repo": "https://github.com/michaelfdickey/venmars-triworld-project"
+      "uid": "0c664cf2-9f40-4def-ba1f-52f10404efc4",
+      "name": "Log Scanner Supreme",
+      "frontend_url": "http://localhost:5002",
+      "backend_url": "http://localhost:8002",
+      "project_folder": "/Users/michaelfdickey/Documents/repositories/log-scanner-supreme/",
+      "github_repo": "https://github.com/michaelfdickey/log-scanner-supreme"
+    },
+    {
+      "uid": "c2108462-eba4-495a-93df-eb8f21944cd3",
+      "name": "Project Atlas",
+      "frontend_url": "http://localhost:5000",
+      "backend_url": "http://localhost:8000",
+      "project_folder": "/Users/michaelfdickey/Documents/repositories/project-tracker-4/",
+      "github_repo": "https://github.com/michaelfdickey/project-tracker-4"
+    },
+    {
+      "uid": "e9a3cbe1-1202-4a49-9594-e69321d2074e",
+      "name": "Dr. ARCtopus",
+      "frontend_url": "http://localhost:5003",
+      "backend_url": "http://localhost:8003",
+      "project_folder": "/Users/michaelfdickey/Documents/repositories/dr-arctopus/",
+      "github_repo": ""
+    },
+    {
+      "uid": "433d9b4b-682e-4024-9a83-cca5ce7ff6d2",
+      "name": "Actions Recon",
+      "frontend_url": "http://localhost:5004",
+      "backend_url": "http://localhost:8004",
+      "project_folder": "/Users/michaelfdickey/Documents/repositories/actions-recon/",
+      "github_repo": "https://github.com/corycalahan/actions-recon#"
     }
   ]
 }

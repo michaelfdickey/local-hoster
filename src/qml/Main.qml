@@ -24,6 +24,9 @@ ApplicationWindow {
                                      backendUrl, projectFolder, githubRepo)
             }
         }
+        onDeleteRequested: function(index) {
+            appManager.removeApp(index)
+        }
     }
 
     // ── Header ─────────────────────────────────────────────────
@@ -49,6 +52,20 @@ ApplicationWindow {
         }
     }
 
+    // ── Sorting state ────────────────────────────────────────
+    property string sortColumn: ""
+    property bool sortAscending: true
+
+    function toggleSort(column) {
+        if (sortColumn === column) {
+            sortAscending = !sortAscending
+        } else {
+            sortColumn = column
+            sortAscending = true
+        }
+        appManager.sortApps(sortColumn, sortAscending)
+    }
+
     // ── App list ───────────────────────────────────────────────
     ColumnLayout {
         anchors.fill: parent
@@ -67,11 +84,63 @@ ApplicationWindow {
                 anchors.rightMargin: 12
                 spacing: 8
 
-                Label { text: "Name";        color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 220 }
-                Label { text: "Frontend";     color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 140 }
+                // Sortable: Name
+                Item {
+                    Layout.preferredWidth: 220
+                    implicitHeight: parent.height
+                    RowLayout {
+                        anchors.fill: parent
+                        spacing: 2
+                        Label { text: "Name"; color: "#a6adc8"; font.bold: true }
+                        Label {
+                            text: root.sortColumn === "name" ? (root.sortAscending ? "▲" : "▼") : ""
+                            color: "#a6adc8"; font.pixelSize: 10
+                            Layout.alignment: Qt.AlignBottom
+                        }
+                        Item { Layout.fillWidth: true }
+                    }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.toggleSort("name") }
+                }
+
+                // Sortable: Frontend
+                Item {
+                    Layout.preferredWidth: 140
+                    implicitHeight: parent.height
+                    RowLayout {
+                        anchors.fill: parent
+                        spacing: 2
+                        Label { text: "Frontend"; color: "#a6adc8"; font.bold: true }
+                        Label {
+                            text: root.sortColumn === "frontend" ? (root.sortAscending ? "▲" : "▼") : ""
+                            color: "#a6adc8"; font.pixelSize: 10
+                            Layout.alignment: Qt.AlignBottom
+                        }
+                        Item { Layout.fillWidth: true }
+                    }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.toggleSort("frontend") }
+                }
+
                 Label { text: "Backend";      color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 140 }
                 Label { text: "Launcher";     color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 50; Layout.rightMargin: 12 }
-                Label { text: "Status";       color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 65 }
+
+                // Sortable: Status
+                Item {
+                    Layout.preferredWidth: 65
+                    implicitHeight: parent.height
+                    RowLayout {
+                        anchors.fill: parent
+                        spacing: 2
+                        Label { text: "Status"; color: "#a6adc8"; font.bold: true }
+                        Label {
+                            text: root.sortColumn === "status" ? (root.sortAscending ? "▲" : "▼") : ""
+                            color: "#a6adc8"; font.pixelSize: 10
+                            Layout.alignment: Qt.AlignBottom
+                        }
+                        Item { Layout.fillWidth: true }
+                    }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.toggleSort("status") }
+                }
+
                 Item  { Layout.fillWidth: true }
                 Label { text: "Actions";      color: "#a6adc8"; font.bold: true }
             }

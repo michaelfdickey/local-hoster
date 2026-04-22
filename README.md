@@ -2,6 +2,8 @@
 
 A lightweight desktop app to track, launch, and restart locally hosted web applications.
 
+![Local Hoster Screenshot](screen_caps/local-hoster.png)
+
 ## Features
 
 - **Track** all your local web apps in one place (name, frontend URL, backend URL)
@@ -229,3 +231,4 @@ All app entries are stored in `config.json` at the project root:
   ]
 }
 ```
+
