@@ -284,8 +284,12 @@ class AppManager(QObject):
     def _load_config(self) -> None:
         if not os.path.isfile(CONFIG_PATH):
             return
-        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        try:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"[warn] Failed to load config: {e}")
+            return
         entries = [AppEntry.from_dict(d) for d in data.get("apps", [])]
         # Detect which apps are already running by checking their ports
         for entry in entries:
@@ -296,8 +300,11 @@ class AppManager(QObject):
 
     def _save_config(self) -> None:
         data = {"apps": [e.to_dict() for e in self._model._entries]}
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        try:
+            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except OSError as e:
+            print(f"[warn] Failed to save config: {e}")
 
     # -- Slots called from QML -----------------------------------------------
 

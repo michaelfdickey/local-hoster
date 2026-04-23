@@ -43,6 +43,8 @@ local-hoster/
 
 ## Getting Started
 
+**Requires Python 3.10+**
+
 ### Quick Start (recommended)
 
 ```bash

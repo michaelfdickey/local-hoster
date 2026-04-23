@@ -297,6 +297,7 @@ ApplicationWindow {
                                 }
                                 contentItem: Label {
                                     text: parent.text; color: "#cdd6f4"
+                                    font.pixelSize: 20
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
@@ -322,6 +323,7 @@ ApplicationWindow {
                                 }
                                 contentItem: Label {
                                     text: parent.text; color: "#cdd6f4"
+                                    font.pixelSize: 20
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
