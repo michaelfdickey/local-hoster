@@ -1,20 +1,20 @@
 {
   "apps": [
     {
-      "uid": "0c664cf2-9f40-4def-ba1f-52f10404efc4",
-      "name": "Log Scanner Supreme",
-      "frontend_url": "http://localhost:5002",
-      "backend_url": "http://localhost:8002",
-      "project_folder": "/Users/michaelfdickey/Documents/repositories/log-scanner-supreme/",
-      "github_repo": "https://github.com/michaelfdickey/log-scanner-supreme"
-    },
-    {
       "uid": "c2108462-eba4-495a-93df-eb8f21944cd3",
       "name": "Project Atlas",
       "frontend_url": "http://localhost:5000",
       "backend_url": "http://localhost:8000",
       "project_folder": "/Users/michaelfdickey/Documents/repositories/project-tracker-4/",
       "github_repo": "https://github.com/michaelfdickey/project-tracker-4"
+    },
+    {
+      "uid": "0c664cf2-9f40-4def-ba1f-52f10404efc4",
+      "name": "Log Scanner Supreme",
+      "frontend_url": "http://localhost:5002",
+      "backend_url": "http://localhost:8002",
+      "project_folder": "/Users/michaelfdickey/Documents/repositories/log-scanner-supreme/",
+      "github_repo": "https://github.com/michaelfdickey/log-scanner-supreme"
     },
     {
       "uid": "e9a3cbe1-1202-4a49-9594-e69321d2074e",
@@ -31,6 +31,14 @@
       "backend_url": "http://localhost:8004",
       "project_folder": "/Users/michaelfdickey/Documents/repositories/actions-recon/",
       "github_repo": "https://github.com/corycalahan/actions-recon#"
+    },
+    {
+      "uid": "5886c370-436b-42d0-a5ba-c56765a2122c",
+      "name": "VenMars Tri World Project",
+      "frontend_url": "http://localhost:5001",
+      "backend_url": "http://localhost:8001",
+      "project_folder": "/Users/michaelfdickey/Documents/repositories/venmars-triworld-project/",
+      "github_repo": "https://github.com/michaelfdickey/venmars-triworld-project"
     }
   ]
 }
