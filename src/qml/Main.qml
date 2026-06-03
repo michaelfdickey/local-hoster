@@ -24,6 +24,9 @@ ApplicationWindow {
                                      backendUrl, projectFolder, githubRepo)
             }
         }
+        onDeleteRequested: function(index) {
+            appManager.removeApp(index)
+        }
     }
 
     // ── Header ─────────────────────────────────────────────────
@@ -49,6 +52,20 @@ ApplicationWindow {
         }
     }
 
+    // ── Sorting state ────────────────────────────────────────
+    property string sortColumn: ""
+    property bool sortAscending: true
+
+    function toggleSort(column) {
+        if (sortColumn === column) {
+            sortAscending = !sortAscending
+        } else {
+            sortColumn = column
+            sortAscending = true
+        }
+        appManager.sortApps(sortColumn, sortAscending)
+    }
+
     // ── App list ───────────────────────────────────────────────
     ColumnLayout {
         anchors.fill: parent
@@ -67,10 +84,63 @@ ApplicationWindow {
                 anchors.rightMargin: 12
                 spacing: 8
 
-                Label { text: "Name";        color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 140 }
-                Label { text: "Frontend";     color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 180 }
-                Label { text: "Backend";      color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 180 }
-                Label { text: "Launcher";     color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 70 }
+                // Sortable: Name
+                Item {
+                    Layout.preferredWidth: 220
+                    implicitHeight: parent.height
+                    RowLayout {
+                        anchors.fill: parent
+                        spacing: 2
+                        Label { text: "Name"; color: "#a6adc8"; font.bold: true }
+                        Label {
+                            text: root.sortColumn === "name" ? (root.sortAscending ? "▲" : "▼") : ""
+                            color: "#a6adc8"; font.pixelSize: 10
+                            Layout.alignment: Qt.AlignBottom
+                        }
+                        Item { Layout.fillWidth: true }
+                    }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.toggleSort("name") }
+                }
+
+                // Sortable: Frontend
+                Item {
+                    Layout.preferredWidth: 140
+                    implicitHeight: parent.height
+                    RowLayout {
+                        anchors.fill: parent
+                        spacing: 2
+                        Label { text: "Frontend"; color: "#a6adc8"; font.bold: true }
+                        Label {
+                            text: root.sortColumn === "frontend" ? (root.sortAscending ? "▲" : "▼") : ""
+                            color: "#a6adc8"; font.pixelSize: 10
+                            Layout.alignment: Qt.AlignBottom
+                        }
+                        Item { Layout.fillWidth: true }
+                    }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.toggleSort("frontend") }
+                }
+
+                Label { text: "Backend";      color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 140 }
+                Label { text: "Launcher";     color: "#a6adc8"; font.bold: true; Layout.preferredWidth: 50; Layout.rightMargin: 12 }
+
+                // Sortable: Status
+                Item {
+                    Layout.preferredWidth: 65
+                    implicitHeight: parent.height
+                    RowLayout {
+                        anchors.fill: parent
+                        spacing: 2
+                        Label { text: "Status"; color: "#a6adc8"; font.bold: true }
+                        Label {
+                            text: root.sortColumn === "status" ? (root.sortAscending ? "▲" : "▼") : ""
+                            color: "#a6adc8"; font.pixelSize: 10
+                            Layout.alignment: Qt.AlignBottom
+                        }
+                        Item { Layout.fillWidth: true }
+                    }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.toggleSort("status") }
+                }
+
                 Item  { Layout.fillWidth: true }
                 Label { text: "Actions";      color: "#a6adc8"; font.bold: true }
             }
@@ -99,13 +169,22 @@ ApplicationWindow {
                         anchors.rightMargin: 12
                         spacing: 8
 
-                        // Name
+                        // Name (clickable link to GitHub repo)
                         Label {
                             text: model.name
                             color: "#cdd6f4"
                             font.pixelSize: 14
+                            font.bold: true
                             elide: Text.ElideRight
-                            Layout.preferredWidth: 140
+                            Layout.preferredWidth: 220
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: model.githubRepo ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                onClicked: {
+                                    if (model.githubRepo)
+                                        Qt.openUrlExternally(model.githubRepo)
+                                }
+                            }
                         }
 
                         // Frontend URL (clickable)
@@ -114,7 +193,7 @@ ApplicationWindow {
                             color: model.frontendUrl ? "#89b4fa" : "#585b70"
                             font.pixelSize: 13
                             elide: Text.ElideRight
-                            Layout.preferredWidth: 180
+                            Layout.preferredWidth: 140
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: model.frontendUrl ? Qt.PointingHandCursor : Qt.ArrowCursor
@@ -131,7 +210,7 @@ ApplicationWindow {
                             color: model.backendUrl ? "#89b4fa" : "#585b70"
                             font.pixelSize: 13
                             elide: Text.ElideRight
-                            Layout.preferredWidth: 180
+                            Layout.preferredWidth: 140
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: model.backendUrl ? Qt.PointingHandCursor : Qt.ArrowCursor
@@ -148,7 +227,17 @@ ApplicationWindow {
                             color: model.hasLauncher ? "#a6e3a1" : "#f38ba8"
                             font.pixelSize: 16
                             horizontalAlignment: Text.AlignHCenter
-                            Layout.preferredWidth: 70
+                            Layout.preferredWidth: 50
+                            Layout.rightMargin: 12
+                        }
+
+                        // Running status
+                        Label {
+                            text: model.running ? "Running" : "Stopped"
+                            color: model.running ? "#a6e3a1" : "#f38ba8"
+                            font.pixelSize: 13
+                            font.bold: true
+                            Layout.preferredWidth: 65
                         }
 
                         Item { Layout.fillWidth: true }
@@ -208,6 +297,7 @@ ApplicationWindow {
                                 }
                                 contentItem: Label {
                                     text: parent.text; color: "#cdd6f4"
+                                    font.pixelSize: 20
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
@@ -233,6 +323,7 @@ ApplicationWindow {
                                 }
                                 contentItem: Label {
                                     text: parent.text; color: "#cdd6f4"
+                                    font.pixelSize: 20
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
