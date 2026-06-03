@@ -255,10 +255,12 @@ def get_venv_python() -> str:
 def start():
     python = get_venv_python() if os.path.isfile(get_venv_python()) else sys.executable
 
-    # Start the server as a subprocess
+    # Start the server in a new process group so CTRL+C doesn't propagate
+    CREATE_NEW_PROCESS_GROUP = 0x00000200
     proc = subprocess.Popen(
         [python, MAIN_SCRIPT],
         cwd=ROOT_DIR,
+        creationflags=CREATE_NEW_PROCESS_GROUP if platform.system() == "Windows" else 0,
     )
 
     # Write PID so --stop can find it later
@@ -266,7 +268,15 @@ def start():
         f.write(str(proc.pid))
 
     # Wait for the process (keeps this launcher alive while server runs)
-    sys.exit(proc.wait())
+    try:
+        sys.exit(proc.wait())
+    except KeyboardInterrupt:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        sys.exit(0)
 
 
 def stop():

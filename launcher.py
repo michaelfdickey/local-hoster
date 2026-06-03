@@ -79,7 +79,20 @@ def launch_app() -> None:
     """Launch the main application inside the venv."""
     python = get_venv_python()
     print("[launcher] Starting Local Hoster …")
-    sys.exit(subprocess.call([python, MAIN_SCRIPT]))
+    CREATE_NEW_PROCESS_GROUP = 0x00000200
+    proc = subprocess.Popen(
+        [python, MAIN_SCRIPT],
+        creationflags=CREATE_NEW_PROCESS_GROUP if platform.system() == "Windows" else 0,
+    )
+    try:
+        sys.exit(proc.wait())
+    except KeyboardInterrupt:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        sys.exit(0)
 
 
 def main() -> None:

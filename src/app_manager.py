@@ -15,6 +15,7 @@ import os
 import platform
 import socket
 import subprocess
+import sys
 import uuid
 from typing import Optional
 from urllib.parse import urlparse
@@ -390,7 +391,7 @@ class AppManager(QObject):
             venv_python = os.path.join(entry.project_folder, "venv", "Scripts", "python.exe") \
                 if platform.system() == "Windows" \
                 else os.path.join(entry.project_folder, "venv", "bin", "python")
-            python = venv_python if os.path.isfile(venv_python) else "python"
+            python = venv_python if os.path.isfile(venv_python) else sys.executable
             proc.start(python, [launcher] + extra_args)
         else:
             # .sh launcher
@@ -416,7 +417,7 @@ class AppManager(QObject):
                 venv_python = os.path.join(entry.project_folder, "venv", "Scripts", "python.exe") \
                     if platform.system() == "Windows" \
                     else os.path.join(entry.project_folder, "venv", "bin", "python")
-                python = venv_python if os.path.isfile(venv_python) else "python"
+                python = venv_python if os.path.isfile(venv_python) else sys.executable
                 subprocess.call(
                     [python, launcher, "--stop"],
                     cwd=entry.project_folder,
