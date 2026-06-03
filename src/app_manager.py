@@ -319,9 +319,34 @@ class AppManager(QObject):
         entry = self._model.entry_at(index)
         if entry is None or not entry.running:
             return
+
+        # Invoke the launcher with --stop so it can kill its own child processes
+        if entry.has_launcher:
+            launcher = entry.launcher_path()
+            if launcher.endswith(".py"):
+                venv_python = os.path.join(entry.project_folder, "venv", "Scripts", "python.exe") \
+                    if platform.system() == "Windows" \
+                    else os.path.join(entry.project_folder, "venv", "bin", "python")
+                python = venv_python if os.path.isfile(venv_python) else "python"
+                subprocess.call(
+                    [python, launcher, "--stop"],
+                    cwd=entry.project_folder,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=10,
+                )
+            else:
+                subprocess.call(
+                    ["bash", launcher, "--stop"],
+                    cwd=entry.project_folder,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=10,
+                )
+
+        # Clean up the QProcess handle
         if entry.process:
-            entry.process.terminate()
-            if not entry.process.waitForFinished(5000):
+            if entry.process.state() != QProcess.NotRunning:
                 entry.process.kill()
                 entry.process.waitForFinished(3000)
         entry.running = False

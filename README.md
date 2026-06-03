@@ -73,6 +73,99 @@ Each tracked web app must have a **launcher script** in its project folder:
 
 The launcher script is responsible for activating the project's own virtual environment (if any) and starting the web server. Local Hoster starts / stops these scripts as child processes.
 
+### Launcher `--stop` Convention
+
+Local Hoster invokes the launcher with `--stop` when the user clicks Stop or Restart. The launcher **must** handle this switch to cleanly kill the running server. The recommended pattern is to use a PID file.
+
+### Windows `launcher.py` Template
+
+Below is a complete working template for a Windows `launcher.py`. Copy this into any tracked app's project folder and adapt the `MAIN_SCRIPT` path and server start command to match your project:
+
+```python
+#!/usr/bin/env python3
+"""
+launcher.py - Windows launcher for use with Local Hoster.
+
+Supports:
+    python launcher.py          # Start the app
+    python launcher.py --stop   # Stop the app via PID file
+"""
+
+import os
+import sys
+import subprocess
+import platform
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+VENV_DIR = os.path.join(ROOT_DIR, "venv")
+PID_FILE = os.path.join(ROOT_DIR, ".server.pid")
+
+# --- EDIT THIS: path to your server entry point ---
+MAIN_SCRIPT = os.path.join(ROOT_DIR, "src", "main.py")
+
+
+def get_venv_python() -> str:
+    if platform.system() == "Windows":
+        return os.path.join(VENV_DIR, "Scripts", "python.exe")
+    return os.path.join(VENV_DIR, "bin", "python")
+
+
+def start():
+    python = get_venv_python() if os.path.isfile(get_venv_python()) else sys.executable
+
+    # Start the server as a subprocess
+    proc = subprocess.Popen(
+        [python, MAIN_SCRIPT],
+        cwd=ROOT_DIR,
+    )
+
+    # Write PID so --stop can find it later
+    with open(PID_FILE, "w") as f:
+        f.write(str(proc.pid))
+
+    # Wait for the process (keeps this launcher alive while server runs)
+    sys.exit(proc.wait())
+
+
+def stop():
+    if not os.path.isfile(PID_FILE):
+        return
+
+    with open(PID_FILE, "r") as f:
+        pid = int(f.read().strip())
+
+    if platform.system() == "Windows":
+        # Kill the entire process tree on Windows
+        subprocess.call(
+            ["taskkill", "/F", "/T", "/PID", str(pid)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    else:
+        import signal
+        try:
+            os.killpg(os.getpgid(pid), signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            pass
+
+    if os.path.isfile(PID_FILE):
+        os.remove(PID_FILE)
+
+
+if __name__ == "__main__":
+    if "--stop" in sys.argv:
+        stop()
+    else:
+        start()
+```
+
+**Key points:**
+- When launched normally (no args): starts the server, writes its PID to `.server.pid`, stays alive
+- When launched with `--stop`: reads the PID file, kills the process tree, deletes the PID file, exits
+- On Windows uses `taskkill /F /T /PID` to kill the entire process tree (server + all children)
+- On macOS/Linux uses `os.killpg()` to kill the process group
+- Add `.server.pid` to the tracked app's `.gitignore`
+
 ## Configuration
 
 All app entries are stored in `config.json` at the project root:
