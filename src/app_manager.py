@@ -41,8 +41,11 @@ from PySide6.QtCore import (
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(ROOT_DIR, "config.json")
 
-# Launcher script names to look for, in priority order
-LAUNCHER_NAMES = ["launcher.sh", "launcher.py"]
+# Launcher script names to look for, in priority order (platform-dependent)
+if platform.system() == "Windows":
+    LAUNCHER_NAMES = ["launcher.py", "launcher.sh"]
+else:
+    LAUNCHER_NAMES = ["launcher.sh", "launcher.py"]
 
 
 def _find_launcher(project_folder: str) -> Optional[str]:
